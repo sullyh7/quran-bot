@@ -19,6 +19,18 @@ var APIKeySecret string = getConfig("APIKeySecret")
 var AccessToken string = getConfig("AccessToken")
 var AccessTokenSecret string = getConfig("AccessTokenSecret")
 
+const fileName string = "quran-dataset.csv"
+
+var reset = "\033[0m"
+var red = "\033[31m"
+var green = "\033[32m"
+var yellow = "\033[33m"
+var blue = "\033[34m"
+var purple = "\033[35m"
+var cyan = "\033[36m"
+var gray = "\033[37m"
+var white = "\033[97m"
+
 func main() {
 
 	cred := Credentials{
@@ -27,43 +39,65 @@ func main() {
 		ConsumerKey:       APIKey,
 		ConsumerSecret:    APIKeySecret,
 	}
-	fmt.Println("Loading Quran verses...")
+	normalLog("Welcome to quran bot")
+	normalLog("Loading Quran verses from " + fileName + "...")
 	verses, err := loadVerses()
 	rand.Seed(time.Now().Unix())
 
 	if err != nil {
-		fmt.Println("Error loading quran verses", err.Error())
+		errorLog("Error loading quran verses from " + fileName + " Error: " + err.Error())
 		return
 	}
-
+	normalLog("Authenticating twitter client")
 	for {
 		client, err := getClient(&cred)
 		if err != nil {
-			log.Println("Error getting Twitter Client")
+			errorLog("Error getting Twitter Client")
 			log.Println(err)
+			log.Fatal()
 		}
-
+		normalLog("========================================================")
+		normalLog("Getting random verse...")
 		randomVerse := verseToTweetBody(&verses[rand.Intn(len(verses))])
 
 		for len(randomVerse) > 280 {
 			randomVerse = verseToTweetBody(&verses[rand.Intn(len(verses))])
+			showLog("Verse too long, getting another verse...", purple)
 		}
 
-		fmt.Println(randomVerse)
+		normalLog("Chosen verse:")
+		showLog(randomVerse, cyan)
 
+		normalLog("Tweeting verse...")
 		tweet, resp, err := client.Statuses.Update(randomVerse, nil)
 		if err != nil {
-			fmt.Println("ERROR:")
+			errorLog("Error: " + err.Error())
 			log.Println(err)
 		}
 
-		fmt.Printf("Tweeted at %v:\n %v \n", time.Now(), tweet.FullText)
-		fmt.Printf("Response: %v", resp.Status)
+		fmt.Printf("Successfully Tweeted at %v:\n ID: %v\n", time.Now(), tweet.ID)
+		fmt.Printf("Response: %v\n", resp.Status)
 		resp.Body.Close()
 
-		time.Sleep(2 * time.Hour)
+		normalLog("========================================================")
+
+		time.Sleep(5 * time.Hour)
 	}
 
+}
+
+func normalLog(msg string) {
+	showLog(msg, blue)
+}
+func errorLog(msg string) {
+	showLog(msg, red)
+}
+func successLog(msg string) {
+	showLog(msg, green)
+}
+
+func showLog(message, colour string) {
+	fmt.Println(colour, message)
 }
 
 func getConfig(name string) string {
@@ -102,7 +136,6 @@ func verseToTweetBody(v *Verse) (body string) {
 }
 
 func loadVerses() (verses []Verse, e error) {
-	const fileName string = "quran-dataset.csv"
 	in, err := os.Open(fileName)
 	if err != nil {
 		return verses, fmt.Errorf("error opening file: %s", err.Error())
