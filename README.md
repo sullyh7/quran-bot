@@ -1,5 +1,5 @@
 # quran-bot
-Twitter bot which posts a Quran verse translation and a link to its tafsir every 2 hours
+Twitter bot which posts a Quran verse translation and a link to its tafsir every 5 hours
 
 - Uses a public csv file which contains all quran verses with their arabic translation, verse number and chapter names.
 - Each verse modeled as a verse data structure in the program
